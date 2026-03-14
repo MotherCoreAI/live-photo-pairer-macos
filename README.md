@@ -139,6 +139,12 @@ The app exports a JSON report describing:
 
 Not yet included. Add after first macOS build verification.
 
+## Validation status
+
+Current repository state is implemented and pushed, but final build/runtime validation is still pending on a macOS machine with Xcode. The development host used for initial implementation did not have the Swift toolchain available for local compilation.
+
+See `docs/validation-checklist.md`.
+
 ## Future fallback if needed
 
 If native metadata extraction proves insufficient for real-world files, the intended fallback is `exiftool` for deeper Apple/QuickTime metadata inspection.
