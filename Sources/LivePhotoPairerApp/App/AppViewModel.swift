@@ -11,6 +11,7 @@ final class AppViewModel: ObservableObject {
     @Published var scanResult: ScanResult?
     @Published var includeLowConfidence = false
     @Published var isScanning = false
+    @Published var isApplying = false
     @Published var statusMessage = "Select a folder to begin."
 
     private let scanner = FolderScanner()
@@ -19,10 +20,44 @@ final class AppViewModel: ObservableObject {
     private let applyRollbackService = ApplyRollbackService()
     private let reportGenerator = ReportGenerator()
 
-    var pairs: [MatchPair] { scanResult?.pairs ?? [] }
-    var unmatchedImages: [MediaFile] { scanResult?.unmatchedImages ?? [] }
-    var unmatchedVideos: [MediaFile] { scanResult?.unmatchedVideos ?? [] }
-    var ambiguous: [AmbiguousCandidate] { scanResult?.ambiguous ?? [] }
+    var pairs: [MatchPair] {
+        (scanResult?.pairs ?? []).sorted {
+            if $0.confidence != $1.confidence { return $0.confidence > $1.confidence }
+            return $0.proposedBaseName < $1.proposedBaseName
+        }
+    }
+
+    var unmatchedImages: [MediaFile] {
+        (scanResult?.unmatchedImages ?? []).sorted { $0.url.lastPathComponent < $1.url.lastPathComponent }
+    }
+
+    var unmatchedVideos: [MediaFile] {
+        (scanResult?.unmatchedVideos ?? []).sorted { $0.url.lastPathComponent < $1.url.lastPathComponent }
+    }
+
+    var ambiguous: [AmbiguousCandidate] {
+        (scanResult?.ambiguous ?? []).sorted { $0.image.url.lastPathComponent < $1.image.url.lastPathComponent }
+    }
+
+    var hasResults: Bool {
+        scanResult != nil
+    }
+
+    var canApplyRename: Bool {
+        !isBusy && !pairs.isEmpty
+    }
+
+    var canRollback: Bool {
+        !isBusy && selectedFolder != nil
+    }
+
+    var canExportReport: Bool {
+        !isBusy && scanResult != nil
+    }
+
+    var isBusy: Bool {
+        isScanning || isApplying
+    }
 
     func chooseFolder() {
         #if canImport(AppKit)
@@ -46,6 +81,7 @@ final class AppViewModel: ObservableObject {
         }
 
         isScanning = true
+        statusMessage = "Scanning \(selectedFolder.lastPathComponent)…"
         defer { isScanning = false }
 
         do {
@@ -58,7 +94,7 @@ final class AppViewModel: ObservableObject {
             let matcher = PairMatcher(includeLowConfidence: includeLowConfidence)
             scanResult = matcher.match(rootFolder: selectedFolder, mediaFiles: mediaFiles)
             if let summary = scanResult?.summary {
-                statusMessage = "Scanned \(summary.filesScanned) files. Matched \(summary.pairsMatched) pairs."
+                statusMessage = "Scanned \(summary.filesScanned) files. Matched \(summary.pairsMatched) pairs, \(summary.ambiguous) ambiguous."
             }
         } catch {
             statusMessage = "Scan failed: \(error.localizedDescription)"
@@ -70,6 +106,9 @@ final class AppViewModel: ObservableObject {
             statusMessage = "Nothing to apply."
             return
         }
+
+        isApplying = true
+        defer { isApplying = false }
 
         do {
             let plans = renamePlanner.plan(for: scanResult.pairs)
@@ -87,9 +126,14 @@ final class AppViewModel: ObservableObject {
             return
         }
 
+        isApplying = true
+        defer { isApplying = false }
+
         do {
             let count = try applyRollbackService.rollbackLastBatch(in: selectedFolder)
-            statusMessage = "Rolled back \(count) file renames."
+            statusMessage = count > 0
+                ? "Rolled back \(count) file renames."
+                : "No rollback operations were applied."
             Task { await scan() }
         } catch {
             statusMessage = "Rollback failed: \(error.localizedDescription)"
