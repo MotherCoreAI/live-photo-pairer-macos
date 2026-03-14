@@ -1,0 +1,9 @@
+# macOS
+.DS_Store
+DerivedData/
+.build/
+*.xcuserstate
+xcuserdata/
+*.moved-aside
+*.rollback.json
+report.json
