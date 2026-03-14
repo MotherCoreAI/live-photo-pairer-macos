@@ -1,34 +1,32 @@
 import Foundation
 
 struct ApplyRollbackService {
+    private struct StagedRename {
+        let plan: PlannedRename
+        let tempURL: URL
+    }
+
     func apply(scanResult: ScanResult, plans: [PlannedRename]) throws -> RollbackBatch {
         let tempSuffix = ".moved-aside"
-        var staged: [(from: URL, temp: URL)] = []
+        var staged: [StagedRename] = []
         var operations: [RenameOperation] = []
 
         do {
             for plan in plans {
-                let tempURL = plan.sourceURL.deletingLastPathComponent().appendingPathComponent(plan.sourceURL.lastPathComponent + tempSuffix)
+                let tempURL = temporaryURL(for: plan.sourceURL, suffix: tempSuffix)
                 if FileManager.default.fileExists(atPath: tempURL.path) {
                     try FileManager.default.removeItem(at: tempURL)
                 }
                 try FileManager.default.moveItem(at: plan.sourceURL, to: tempURL)
-                staged.append((from: plan.sourceURL, temp: tempURL))
+                staged.append(StagedRename(plan: plan, tempURL: tempURL))
             }
 
             for item in staged {
-                guard let plan = plans.first(where: { $0.sourceURL.lastPathComponent + tempSuffix == item.temp.lastPathComponent }) else {
-                    continue
-                }
-                try FileManager.default.moveItem(at: item.temp, to: plan.destinationURL)
-                operations.append(RenameOperation(originalPath: plan.sourceURL.path, newPath: plan.destinationURL.path))
+                try FileManager.default.moveItem(at: item.tempURL, to: item.plan.destinationURL)
+                operations.append(RenameOperation(originalPath: item.plan.sourceURL.path, newPath: item.plan.destinationURL.path))
             }
         } catch {
-            for item in staged.reversed() {
-                if FileManager.default.fileExists(atPath: item.temp.path) {
-                    try? FileManager.default.moveItem(at: item.temp, to: item.from)
-                }
-            }
+            rollbackStagedMoves(staged)
             throw error
         }
 
@@ -49,11 +47,34 @@ struct ApplyRollbackService {
             let newURL = URL(fileURLWithPath: op.newPath)
             let originalURL = URL(fileURLWithPath: op.originalPath)
             guard FileManager.default.fileExists(atPath: newURL.path) else { continue }
+            guard !FileManager.default.fileExists(atPath: originalURL.path) else { continue }
             try FileManager.default.moveItem(at: newURL, to: originalURL)
             count += 1
         }
 
         return count
+    }
+
+    private func rollbackStagedMoves(_ staged: [StagedRename]) {
+        for item in staged.reversed() {
+            if FileManager.default.fileExists(atPath: item.tempURL.path) {
+                try? FileManager.default.moveItem(at: item.tempURL, to: item.plan.sourceURL)
+            }
+        }
+    }
+
+    private func temporaryURL(for sourceURL: URL, suffix: String) -> URL {
+        let directory = sourceURL.deletingLastPathComponent()
+        let fileName = sourceURL.lastPathComponent
+        var candidate = directory.appendingPathComponent(fileName + suffix)
+        var index = 1
+
+        while FileManager.default.fileExists(atPath: candidate.path) {
+            candidate = directory.appendingPathComponent(fileName + suffix + ".\(index)")
+            index += 1
+        }
+
+        return candidate
     }
 
     private func write(batch: RollbackBatch, in folderURL: URL) throws {

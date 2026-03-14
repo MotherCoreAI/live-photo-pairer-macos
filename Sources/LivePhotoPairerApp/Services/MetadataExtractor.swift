@@ -83,13 +83,13 @@ struct MetadataExtractor {
         var width: Int?
         var height: Int?
 
-        if let track = try? asset.loadTracks(withMediaType: .video).first {
-            let size = try? track.load(.naturalSize)
-            width = size.map { Int(abs($0.width)) }
-            height = size.map { Int(abs($0.height)) }
+        if let track = asset.tracks(withMediaType: .video).first {
+            let size = track.naturalSize.applying(track.preferredTransform)
+            width = Int(abs(size.width))
+            height = Int(abs(size.height))
         }
 
-        let metadataItems = asset.commonMetadata + (try? asset.load(.metadata)) ?? []
+        let metadataItems = asset.commonMetadata
         for item in metadataItems {
             if createdAt == nil,
                let key = item.commonKey?.rawValue.lowercased(),
@@ -116,6 +116,7 @@ struct MetadataExtractor {
 
     private func parseExifDate(_ value: String) -> Date? {
         let formatter = DateFormatter()
+        formatter.locale = Locale(identifier: "en_US_POSIX")
         formatter.dateFormat = "yyyy:MM:dd HH:mm:ss"
         return formatter.date(from: value)
     }
@@ -126,6 +127,7 @@ struct MetadataExtractor {
         if let date = iso.date(from: value) { return date }
 
         let formatter = DateFormatter()
+        formatter.locale = Locale(identifier: "en_US_POSIX")
         formatter.dateFormat = "yyyy-MM-dd'T'HH:mm:ssZ"
         return formatter.date(from: value)
     }

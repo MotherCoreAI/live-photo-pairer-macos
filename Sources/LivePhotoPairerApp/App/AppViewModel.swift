@@ -1,4 +1,6 @@
+#if canImport(AppKit)
 import AppKit
+#endif
 import Foundation
 import SwiftUI
 
@@ -30,6 +32,7 @@ final class AppViewModel: ObservableObject {
         panel.prompt = "Select"
         if panel.runModal() == .OK {
             selectedFolder = panel.url
+            scanResult = nil
             statusMessage = "Folder selected: \(panel.url?.path ?? "")"
         }
         #endif
@@ -67,6 +70,7 @@ final class AppViewModel: ObservableObject {
             let plans = renamePlanner.plan(for: scanResult.pairs)
             let batch = try applyRollbackService.apply(scanResult: scanResult, plans: plans)
             statusMessage = "Applied \(batch.operations.count) file renames."
+            Task { await scan() }
         } catch {
             statusMessage = "Apply failed: \(error.localizedDescription)"
         }
@@ -81,6 +85,7 @@ final class AppViewModel: ObservableObject {
         do {
             let count = try applyRollbackService.rollbackLastBatch(in: selectedFolder)
             statusMessage = "Rolled back \(count) file renames."
+            Task { await scan() }
         } catch {
             statusMessage = "Rollback failed: \(error.localizedDescription)"
         }
