@@ -1,4 +1,5 @@
 import SwiftUI
+import LivePhotoPairerCore
 
 @main
 struct LivePhotoPairerApp: App {

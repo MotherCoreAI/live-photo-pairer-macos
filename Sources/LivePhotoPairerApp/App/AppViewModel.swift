@@ -3,6 +3,7 @@ import AppKit
 #endif
 import Foundation
 import SwiftUI
+import LivePhotoPairerCore
 
 @MainActor
 final class AppViewModel: ObservableObject {

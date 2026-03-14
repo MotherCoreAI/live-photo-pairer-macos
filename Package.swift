@@ -7,16 +7,22 @@ let package = Package(
         .macOS(.v14)
     ],
     products: [
+        .library(name: "LivePhotoPairerCore", targets: ["LivePhotoPairerCore"]),
         .executable(name: "LivePhotoPairer", targets: ["LivePhotoPairerApp"])
     ],
     targets: [
+        .target(
+            name: "LivePhotoPairerCore",
+            path: "Sources/LivePhotoPairerCore"
+        ),
         .executableTarget(
             name: "LivePhotoPairerApp",
+            dependencies: ["LivePhotoPairerCore"],
             path: "Sources/LivePhotoPairerApp"
         ),
         .testTarget(
             name: "LivePhotoPairerTests",
-            dependencies: ["LivePhotoPairerApp"],
+            dependencies: ["LivePhotoPairerCore"],
             path: "Tests/LivePhotoPairerTests"
         )
     ]

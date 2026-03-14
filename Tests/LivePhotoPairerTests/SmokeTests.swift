@@ -1,5 +1,5 @@
 import XCTest
-@testable import LivePhotoPairerApp
+@testable import LivePhotoPairerCore
 
 final class SmokeTests: XCTestCase {
     func testSmoke() {

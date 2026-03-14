@@ -1,5 +1,5 @@
 import XCTest
-@testable import LivePhotoPairerApp
+@testable import LivePhotoPairerCore
 
 final class ApplyRollbackServiceTests: XCTestCase {
     func testApplyAndRollbackRoundTrip() throws {

@@ -1,4 +1,5 @@
 import SwiftUI
+import LivePhotoPairerCore
 
 struct ContentView: View {
     @ObservedObject var viewModel: AppViewModel
