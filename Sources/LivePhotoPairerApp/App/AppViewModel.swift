@@ -50,7 +50,11 @@ final class AppViewModel: ObservableObject {
 
         do {
             let urls = try scanner.scan(folderURL: selectedFolder)
-            let mediaFiles = urls.map { metadataExtractor.extract(from: $0) }
+            var mediaFiles: [MediaFile] = []
+            mediaFiles.reserveCapacity(urls.count)
+            for url in urls {
+                mediaFiles.append(await metadataExtractor.extract(from: url))
+            }
             let matcher = PairMatcher(includeLowConfidence: includeLowConfidence)
             scanResult = matcher.match(rootFolder: selectedFolder, mediaFiles: mediaFiles)
             if let summary = scanResult?.summary {

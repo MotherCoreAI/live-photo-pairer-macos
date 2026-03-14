@@ -9,7 +9,7 @@ import ImageIO
 public struct MetadataExtractor {
     public init() {}
 
-    public func extract(from url: URL) -> MediaFile {
+    public func extract(from url: URL) async -> MediaFile {
         let ext = url.pathExtension.lowercased()
         let kind: MediaKind = ext == "mov" ? .video : .image
 
@@ -33,7 +33,7 @@ public struct MetadataExtractor {
                 pixelHeight: imageMetadata.height
             )
         case .video:
-            let videoMetadata = extractVideoMetadata(from: url)
+            let videoMetadata = await extractVideoMetadata(from: url)
             return MediaFile(
                 url: url,
                 kind: .video,
@@ -74,38 +74,51 @@ public struct MetadataExtractor {
         #endif
     }
 
-    private func extractVideoMetadata(from url: URL) -> (createdAt: Date?, contentIdentifier: String?, durationSeconds: Double?, width: Int?, height: Int?) {
+    private func extractVideoMetadata(from url: URL) async -> (createdAt: Date?, contentIdentifier: String?, durationSeconds: Double?, width: Int?, height: Int?) {
         #if canImport(AVFoundation)
         let asset = AVURLAsset(url: url)
-        let duration = CMTimeGetSeconds(asset.duration)
-        let durationValue = duration.isFinite ? duration : nil
+
+        let durationTime = try? await asset.load(.duration)
+        let durationValue = durationTime.map { time in
+            let seconds = CMTimeGetSeconds(time)
+            return seconds.isFinite ? seconds : nil
+        } ?? nil
 
         var createdAt: Date?
         var contentIdentifier: String?
         var width: Int?
         var height: Int?
 
-        if let track = asset.tracks(withMediaType: .video).first {
-            let size = track.naturalSize.applying(track.preferredTransform)
-            width = Int(abs(size.width))
-            height = Int(abs(size.height))
+        if let track = try? await asset.loadTracks(withMediaType: .video).first {
+            let size = try? await track.load(.naturalSize)
+            let transform = try? await track.load(.preferredTransform)
+            if let size, let transform {
+                let transformed = size.applying(transform)
+                width = Int(abs(transformed.width))
+                height = Int(abs(transformed.height))
+            }
         }
 
-        let metadataItems = asset.commonMetadata
-        for item in metadataItems {
-            if createdAt == nil,
-               let key = item.commonKey?.rawValue.lowercased(),
-               key.contains("creation") || key.contains("date") {
-                createdAt = item.dateValue ?? parseLooseDate(item.stringValue)
-            }
+        if let metadataItems = try? await asset.load(.commonMetadata) {
+            for item in metadataItems {
+                if createdAt == nil,
+                   let key = item.commonKey?.rawValue.lowercased(),
+                   key.contains("creation") || key.contains("date") {
+                    let dateValue = try? await item.load(.dateValue)
+                    let stringValue = try? await item.load(.stringValue)
+                    createdAt = dateValue ?? parseLooseDate(stringValue ?? nil)
+                }
 
-            if contentIdentifier == nil {
-                if let key = item.key as? String,
-                   key.lowercased().contains("content.identifier") || key.lowercased().contains("live-photo") {
-                    contentIdentifier = item.stringValue
-                } else if let identifier = item.identifier?.rawValue.lowercased(),
-                          identifier.contains("content.identifier") || identifier.contains("live-photo") {
-                    contentIdentifier = item.stringValue
+                if contentIdentifier == nil {
+                    if let key = item.key as? String,
+                       key.lowercased().contains("content.identifier") || key.lowercased().contains("live-photo") {
+                        let stringValue = try? await item.load(.stringValue)
+                        contentIdentifier = stringValue ?? nil
+                    } else if let identifier = item.identifier?.rawValue.lowercased(),
+                              identifier.contains("content.identifier") || identifier.contains("live-photo") {
+                        let stringValue = try? await item.load(.stringValue)
+                        contentIdentifier = stringValue ?? nil
+                    }
                 }
             }
         }
