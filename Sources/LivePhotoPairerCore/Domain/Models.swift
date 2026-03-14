@@ -1,16 +1,16 @@
 import Foundation
 
-enum MediaKind: String, Codable, CaseIterable {
+public enum MediaKind: String, Codable, CaseIterable {
     case image
     case video
 }
 
-enum MatchConfidence: String, Codable, CaseIterable, Comparable {
+public enum MatchConfidence: String, Codable, CaseIterable, Comparable {
     case high
     case medium
     case low
 
-    static func < (lhs: MatchConfidence, rhs: MatchConfidence) -> Bool {
+    public static func < (lhs: MatchConfidence, rhs: MatchConfidence) -> Bool {
         order(lhs) < order(rhs)
     }
 
@@ -23,26 +23,26 @@ enum MatchConfidence: String, Codable, CaseIterable, Comparable {
     }
 }
 
-enum PairStatus: String, Codable {
+public enum PairStatus: String, Codable {
     case planned
     case applied
     case skipped
     case failed
 }
 
-struct MediaFile: Identifiable, Hashable, Codable {
-    let id: UUID
-    let url: URL
-    let kind: MediaKind
-    let createdAt: Date?
-    let contentIdentifier: String?
-    let originalStem: String
-    let fileSize: Int64?
-    let durationSeconds: Double?
-    let pixelWidth: Int?
-    let pixelHeight: Int?
+public struct MediaFile: Identifiable, Hashable, Codable {
+    public let id: UUID
+    public let url: URL
+    public let kind: MediaKind
+    public let createdAt: Date?
+    public let contentIdentifier: String?
+    public let originalStem: String
+    public let fileSize: Int64?
+    public let durationSeconds: Double?
+    public let pixelWidth: Int?
+    public let pixelHeight: Int?
 
-    init(
+    public init(
         id: UUID = UUID(),
         url: URL,
         kind: MediaKind,
@@ -67,17 +67,17 @@ struct MediaFile: Identifiable, Hashable, Codable {
     }
 }
 
-struct MatchPair: Identifiable, Hashable, Codable {
-    let id: UUID
-    let image: MediaFile
-    let video: MediaFile
-    let confidence: MatchConfidence
-    let reasons: [String]
-    let proposedBaseName: String
-    var status: PairStatus
-    var failureReason: String?
+public struct MatchPair: Identifiable, Hashable, Codable {
+    public let id: UUID
+    public let image: MediaFile
+    public let video: MediaFile
+    public let confidence: MatchConfidence
+    public let reasons: [String]
+    public let proposedBaseName: String
+    public var status: PairStatus
+    public var failureReason: String?
 
-    init(
+    public init(
         id: UUID = UUID(),
         image: MediaFile,
         video: MediaFile,
@@ -98,13 +98,13 @@ struct MatchPair: Identifiable, Hashable, Codable {
     }
 }
 
-struct AmbiguousCandidate: Identifiable, Hashable, Codable {
-    let id: UUID
-    let image: MediaFile
-    let candidates: [MediaFile]
-    let reasons: [String]
+public struct AmbiguousCandidate: Identifiable, Hashable, Codable {
+    public let id: UUID
+    public let image: MediaFile
+    public let candidates: [MediaFile]
+    public let reasons: [String]
 
-    init(id: UUID = UUID(), image: MediaFile, candidates: [MediaFile], reasons: [String]) {
+    public init(id: UUID = UUID(), image: MediaFile, candidates: [MediaFile], reasons: [String]) {
         self.id = id
         self.image = image
         self.candidates = candidates
@@ -112,35 +112,48 @@ struct AmbiguousCandidate: Identifiable, Hashable, Codable {
     }
 }
 
-struct ScanSummary: Codable {
-    var filesScanned: Int = 0
-    var images: Int = 0
-    var videos: Int = 0
-    var pairsMatched: Int = 0
-    var pairsApplied: Int = 0
-    var unmatchedImages: Int = 0
-    var unmatchedVideos: Int = 0
-    var ambiguous: Int = 0
+public struct ScanSummary: Codable {
+    public var filesScanned: Int = 0
+    public var images: Int = 0
+    public var videos: Int = 0
+    public var pairsMatched: Int = 0
+    public var pairsApplied: Int = 0
+    public var unmatchedImages: Int = 0
+    public var unmatchedVideos: Int = 0
+    public var ambiguous: Int = 0
+
+    public init() {}
 }
 
-struct ScanResult: Codable {
-    var rootFolder: URL
-    var scannedAt: Date
-    var mediaFiles: [MediaFile]
-    var pairs: [MatchPair]
-    var unmatchedImages: [MediaFile]
-    var unmatchedVideos: [MediaFile]
-    var ambiguous: [AmbiguousCandidate]
-    var summary: ScanSummary
+public struct ScanResult: Codable {
+    public var rootFolder: URL
+    public var scannedAt: Date
+    public var mediaFiles: [MediaFile]
+    public var pairs: [MatchPair]
+    public var unmatchedImages: [MediaFile]
+    public var unmatchedVideos: [MediaFile]
+    public var ambiguous: [AmbiguousCandidate]
+    public var summary: ScanSummary
+
+    public init(rootFolder: URL, scannedAt: Date, mediaFiles: [MediaFile], pairs: [MatchPair], unmatchedImages: [MediaFile], unmatchedVideos: [MediaFile], ambiguous: [AmbiguousCandidate], summary: ScanSummary) {
+        self.rootFolder = rootFolder
+        self.scannedAt = scannedAt
+        self.mediaFiles = mediaFiles
+        self.pairs = pairs
+        self.unmatchedImages = unmatchedImages
+        self.unmatchedVideos = unmatchedVideos
+        self.ambiguous = ambiguous
+        self.summary = summary
+    }
 }
 
-struct RenameOperation: Identifiable, Hashable, Codable {
-    let id: UUID
-    let originalPath: String
-    let newPath: String
-    let appliedAt: Date
+public struct RenameOperation: Identifiable, Hashable, Codable {
+    public let id: UUID
+    public let originalPath: String
+    public let newPath: String
+    public let appliedAt: Date
 
-    init(id: UUID = UUID(), originalPath: String, newPath: String, appliedAt: Date = Date()) {
+    public init(id: UUID = UUID(), originalPath: String, newPath: String, appliedAt: Date = Date()) {
         self.id = id
         self.originalPath = originalPath
         self.newPath = newPath
@@ -148,8 +161,14 @@ struct RenameOperation: Identifiable, Hashable, Codable {
     }
 }
 
-struct RollbackBatch: Codable {
-    let createdAt: Date
-    let rootFolder: String
-    let operations: [RenameOperation]
+public struct RollbackBatch: Codable {
+    public let createdAt: Date
+    public let rootFolder: String
+    public let operations: [RenameOperation]
+
+    public init(createdAt: Date, rootFolder: String, operations: [RenameOperation]) {
+        self.createdAt = createdAt
+        self.rootFolder = rootFolder
+        self.operations = operations
+    }
 }

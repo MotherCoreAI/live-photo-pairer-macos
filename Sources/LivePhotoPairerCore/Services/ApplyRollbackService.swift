@@ -1,12 +1,14 @@
 import Foundation
 
-struct ApplyRollbackService {
+public struct ApplyRollbackService {
+    public init() {}
+
     private struct StagedRename {
         let plan: PlannedRename
         let tempURL: URL
     }
 
-    func apply(scanResult: ScanResult, plans: [PlannedRename]) throws -> RollbackBatch {
+    public func apply(scanResult: ScanResult, plans: [PlannedRename]) throws -> RollbackBatch {
         let tempSuffix = ".moved-aside"
         var staged: [StagedRename] = []
         var operations: [RenameOperation] = []
@@ -35,7 +37,7 @@ struct ApplyRollbackService {
         return batch
     }
 
-    func rollbackLastBatch(in folderURL: URL) throws -> Int {
+    public func rollbackLastBatch(in folderURL: URL) throws -> Int {
         let rollbackURL = folderURL.appendingPathComponent(".live-photo-pairer-rollback.json")
         let data = try Data(contentsOf: rollbackURL)
         let decoder = JSONDecoder()

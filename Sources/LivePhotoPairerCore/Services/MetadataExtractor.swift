@@ -6,8 +6,10 @@ import AVFoundation
 import ImageIO
 #endif
 
-struct MetadataExtractor {
-    func extract(from url: URL) -> MediaFile {
+public struct MetadataExtractor {
+    public init() {}
+
+    public func extract(from url: URL) -> MediaFile {
         let ext = url.pathExtension.lowercased()
         let kind: MediaKind = ext == "mov" ? .video : .image
 

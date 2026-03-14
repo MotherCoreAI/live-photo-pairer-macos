@@ -1,9 +1,11 @@
 import Foundation
 
-struct FolderScanner {
+public struct FolderScanner {
+    public init() {}
+
     private let supportedExtensions = Set(["heic", "jpg", "jpeg", "mov"])
 
-    func scan(folderURL: URL) throws -> [URL] {
+    public func scan(folderURL: URL) throws -> [URL] {
         let keys: Set<URLResourceKey> = [.isRegularFileKey, .isSymbolicLinkKey]
         let enumerator = FileManager.default.enumerator(
             at: folderURL,

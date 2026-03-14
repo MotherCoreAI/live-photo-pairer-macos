@@ -1,12 +1,12 @@
 import Foundation
 
-struct PlannedRename: Identifiable, Hashable {
-    let id: UUID
-    let pairID: UUID
-    let sourceURL: URL
-    let destinationURL: URL
+public struct PlannedRename: Identifiable, Hashable {
+    public let id: UUID
+    public let pairID: UUID
+    public let sourceURL: URL
+    public let destinationURL: URL
 
-    init(id: UUID = UUID(), pairID: UUID, sourceURL: URL, destinationURL: URL) {
+    public init(id: UUID = UUID(), pairID: UUID, sourceURL: URL, destinationURL: URL) {
         self.id = id
         self.pairID = pairID
         self.sourceURL = sourceURL
@@ -14,8 +14,10 @@ struct PlannedRename: Identifiable, Hashable {
     }
 }
 
-struct RenamePlanner {
-    func plan(for pairs: [MatchPair]) -> [PlannedRename] {
+public struct RenamePlanner {
+    public init() {}
+
+    public func plan(for pairs: [MatchPair]) -> [PlannedRename] {
         var reserved = Set<String>()
         var plans: [PlannedRename] = []
 

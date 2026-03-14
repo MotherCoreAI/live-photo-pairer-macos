@@ -1,15 +1,15 @@
 import Foundation
 
-struct PairMatcher {
-    let includeLowConfidence: Bool
-    let timeThreshold: TimeInterval
+public struct PairMatcher {
+    public let includeLowConfidence: Bool
+    public let timeThreshold: TimeInterval
 
-    init(includeLowConfidence: Bool = false, timeThreshold: TimeInterval = 3) {
+    public init(includeLowConfidence: Bool = false, timeThreshold: TimeInterval = 3) {
         self.includeLowConfidence = includeLowConfidence
         self.timeThreshold = timeThreshold
     }
 
-    func match(rootFolder: URL, mediaFiles: [MediaFile]) -> ScanResult {
+    public func match(rootFolder: URL, mediaFiles: [MediaFile]) -> ScanResult {
         let images = mediaFiles.filter { $0.kind == .image }
         let videos = mediaFiles.filter { $0.kind == .video }
 
